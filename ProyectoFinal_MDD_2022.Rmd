@@ -1,0 +1,55 @@
+---
+title: "ProyectoFinal_MDD"
+author: "Susan Valda - Andrew Serrano"
+date: "2022-11-18"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Introducción
+
+# Motivación
+
+# Marco Teórico
+
+# Metodología
+
+# Proceso KDD
+
+## Problema
+
+## Recopilación de la fuente de datos
+### Base de datos
+
+```{r}
+library(haven)#para importar bases de datos
+
+#Carga de datos
+setwd("C:\\Users\\User\\Downloads")
+dir()
+bd_enna = read_spss("ENNA_2016.sav")
+
+```
+
+## Selección
+### Datos objetivo
+
+## Pre-procesado
+
+### Datos pre-procesados
+
+## Transformación
+### Datos transformados
+
+## Minería de datos
+
+## Interpretación
+
+# Resultados
+
+# Análisis de los resultados
+
+# Conclusiones y recomendaciones
+
+# Referencias
