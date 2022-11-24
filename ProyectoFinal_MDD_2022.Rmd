@@ -26,9 +26,7 @@ editor_options:
 library(haven)#para importar bases de datos
 
 #Carga de datos
-setwd("C:\\Users\\User\\Downloads")
-dir()
-bd_enna = read_spss("ENNA_2016.sav")
+load(url("https://github.com/SusanValda/MDD_ProyectoFinal_2022/blob/main/enna.RData?raw=true"))
 
 ```
 
