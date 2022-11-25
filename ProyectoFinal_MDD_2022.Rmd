@@ -26,23 +26,145 @@ editor_options:
 library(haven)#para importar bases de datos
 
 #Carga de datos
-load(url("https://github.com/SusanValda/MDD_ProyectoFinal_2022/blob/main/enna.RData?raw=true"))
-
+load(url("https://github.com/AlvaroLimber/EST-384/blob/master/data/nna16.RData?raw=true"))
 ```
 
 ## Selección
-### Datos objetivo
+Los datos objetivo son:
+
+| Nombre        | Especificación                                                                           |
+|---------------|------------------------------------------------------------------------------------------|
+| depto         | Departamento                                                                             |
+| area          | Urbana Rural                                                                             |
+| ns001a_02     | Sexo                                                                                     |
+| ns001a_03     | ¿Cuántos años cumplidos tienes?                                                          |
+| ns01a_01      | ¿Sabes leer y escribir?                                                                  |
+| ns01a_02a     | ¿Cuál fue el último NIVEL Y CURSO más alto que aprobaste? NIVEL O CICLO                  |
+| ns01a_02b     | ¿Cuál fue el último NIVEL Y CURSO más alto que aprobaste?CURSO O GRADO                   |
+| ns01a_05c     | ¿En qué turno te has inscrito este año (2016)?                                           |
+| ns01a_06      | ¿Asistes/Asististe regularmente al curso al que te has inscrito este año (2016)?         |
+| ns02a_01      | Durante la semana pasada, ¿trabajaste al menos una hora?                                 |
+| ns02b_15      | ¿Dónde realizas tu trabajo?                                                              |
+| ns02b_19_2a   | ¿Si tuvieses que dejar de trabajar, a quien afectaría más?                               |
+| ns02b_20      | ¿Estás de acuerdo con tener este trabajo?                                                |
+| ns02c_26      | Por el trabajo que realizas, ¿cómo te pagan? (de la ocupación principal)                 |
+| ns03a_04      | ¿Estás de acuerdo con realizar estas tareas domésticas?                                  |
+| ns03b_06      | ¿Levantas cargas que son pesadas para ti al realizar estas tareas?                       |
+| ncob_op       | Grupo ocupacional de Ocupación principal                                                 |
+| ncaeb_op      | Clasificación de Actividad Económica de Bolivia de Ocupación principal                   |
+| catactlab     | Categoría de actividad laboral o trabajo                                                 |
+| catactlab_pd2 | B: Actividad laboral o trabajo por debajo de la edad mínima                              |
+
+La variable que ayudará a entrenar el modelo es:
+
+| Nombre 	| Especificación         	|
+|--------	|------------------------	|
+| condac 	| Condición de actividad 	|
 
 ## Pre-procesado
+
+```{r}
+names(nna)
+str(nna)#estructura 
+library(dplyr)
+
+bd <- nna %>% select(condac,depto,area,ns001a_02,ns001a_03,ns01a_01,ns01a_02a,ns01a_02b,ns01a_05c,ns01a_06,ns02a_01,ns02b_15,ns02b_19_2a,ns02b_20,ns02c_26,ns03a_04,ns03b_06,ncob_op,ncaeb_op,catactlab,catactlab_pd2)
+
+bd2 <- nna %>% select(condac,depto,area,ns001a_02,ns001a_03,ns01a_01,ns01a_02a,ns01a_02b,ns01a_05c,ns01a_06,ns02b_15,ns02b_19_2a,ns02b_20,ns02c_26,ns03a_04,ns03b_06,ncob_op,ncaeb_op,catactlab,catactlab_pd2)
+
+describe(nna$ns01a_01)
+
+aux<-c("ns01a_01","ns01a_06","ns02a_01","ns02b_20","ns03a_04","ns03b_06")
+aux2<-c("ns01a_01","ns01a_06","ns02b_20","ns03a_04","ns03b_06")
+
+
+for(i in aux){
+  bd[[i]]<-factor(bd[[i]],c("1.Si","2.No"),c("SI","NO"))
+}
+
+for(i in aux2){
+  bd2[[i]]<-factor(bd2[[i]],c("1.Si","2.No"),c("SI","NO"))
+}
+```
+
 
 ### Datos pre-procesados
 
 ## Transformación
-### Datos transformados
+```{r}
+library(tidyverse)
+bd <- bd %>% rename(sabeLeer=ns01a_01,sexo=ns001a_02,edad=ns001a_03,nivel_ciclo=ns01a_02a,curso_grado=ns01a_02b,turno=ns01a_05c,asiste=ns01a_06,trab_1hr=ns02a_01,lug_trab=ns02b_15,afecta=ns02b_19_2a,deacuerdo=ns02b_20,pago=ns02c_26,lab_dom=ns03a_04,car_pes=ns03b_06,grupo=ncob_op,clasi=ncaeb_op,categ=catactlab,clasi=ncaeb_op,act_lab=catactlab_pd2)
+
+bd2 <- bd2 %>% rename(sabeLeer=ns01a_01,sexo=ns001a_02,edad=ns001a_03,nivel_ciclo=ns01a_02a,curso_grado=ns01a_02b,turno=ns01a_05c,asiste=ns01a_06,lug_trab=ns02b_15,afecta=ns02b_19_2a,deacuerdo=ns02b_20,pago=ns02c_26,lab_dom=ns03a_04,car_pes=ns03b_06,grupo=ncob_op,clasi=ncaeb_op,categ=catactlab,clasi=ncaeb_op,act_lab=catactlab_pd2)
+  
+```
+
+
 
 ## Minería de datos
 
+```{r}
+## Bases: trainbd, testbd
+library(rpart)
+set.seed(123)
+index = sample(1:2, nrow(bd), replace = TRUE, prob=c(0.7, 0.3))
+prop.table(table(index))
+trainbd<-bd[index==1,]
+testbd<-bd[index==2,]
+mod1<-rpart(condac~.,data=trainbd)
+
+index2 = sample(1:2, nrow(bd2), replace = TRUE, prob=c(0.7, 0.3))
+prop.table(table(index2))
+trainbd2<-bd2[index2==1,]
+testbd2<-bd2[index2==2,]
+mod2<-rpart(condac~.,data=trainbd2)
+
+#Explorar los nodos creados por rpart
+mod1
+mod2
+
+#Examinar los parámetros del árbol con printcp
+printcp(mod1)
+printcp(mod2)
+
+#Usar el comando plotcp para explorar los parámetros de forma gráfica
+plotcp(mod1)
+plotcp(mod2)
+
+#Usar la función summary para para examinar el modelo
+summary(mod1)
+
+#Visualizar el árbol
+plot(mod1)
+text(mod1,all=T,use.n=T)
+#install.packages("rpart.plot")
+library(rpart.plot)
+rpart.plot(mod1)
+
+#Visualizar el árbol
+plot(mod2)
+text(mod2,all=T,use.n=T)
+#install.packages("rpart.plot")
+library(rpart.plot)
+rpart.plot(mod2)
+```
 ## Interpretación
+```{r}
+clase<-predict(mod1,testbd,type = "class")
+
+clase2<-predict(mod2,testbd2,type = "class")
+
+table(clase,testbd$condac)
+
+#install.packages('caret')
+library(caret)
+confusionMatrix(table(clase,testbd$condac))
+
+confusionMatrix(table(clase2,testbd2$condac))
+
+
+```
+
 
 # Resultados
 
