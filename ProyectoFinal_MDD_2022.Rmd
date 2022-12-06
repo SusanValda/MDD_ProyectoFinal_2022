@@ -13,20 +13,25 @@ editor_options:
   chunk_output_type: console
 ---
 
-# Introducción
-
-# Motivación
-
-# Marco Teórico
-
 # Metodología
-Para investigar las características asociadas a la práctica del trabajo infantil se tomó como referencia la  metodología KDD, por lo cual se plantean los siguientes pasos:
-  1. Recolección de la información referente a encuestas que contemplen la situación de niños/niñas/adolescentes que realiacem algún tipo de trabajo infantil en Bolivia.
-  2. Selección y tratamiento de los datos.
-  3. Utilizar la librería RPART y CART de Rstudio para generar un modelo y árbol de decisión en base a los datos seleccionados.
-  5. Finalmenta se efectúa el análisis e interpretación del árbol de desición obtenido.
-  
-# Datos
+Para investigar las características asociadas a la práctica del trabajo infantil en Bolivia se tomó como referencia el proceso KDD, por lo cual se plantean los siguientes pasos:
+  1. Recolección de la información referente a la situación de niños/niñas/adolescentes que realicen algún tipo de actividad laboral en Bolivia.
+  2. Selección de la información más relevante de la base de datos, tomando en cuenta tanto a los niños que realizan actividad laboral como los que no la realizan.
+  3. Preprocesamiento y transformación de los datos seleccionados.
+  4. Aplicar la metodología CART para construir el árbol de clasificación y obtener su matriz de confusión.
+  5. Efectuar el análisis e interpretación del árbol de decisión.
+
+## Recopilación de la fuente de datos
+### Base de datos
+
+```{r}
+library(haven)#para importar bases de datos
+
+#Carga de datos
+load(url("https://github.com/AlvaroLimber/EST-384/blob/master/data/nna16.RData?raw=true"))
+```
+
+## Selección
 Se emplearon los datos de la Encuesta de niñas, niños y adolescentes (ENNA) que realizan una actividad laboral o trabajan 2016 obtenida del Instituto Nacional de Estadística (INE).
 
 La base de datos ENNA cuenta con 10488 observaciones y 212 Variables, de las cuales se utilizarán las siguientes variables para la elaboración del árbol de decisión.
@@ -62,18 +67,6 @@ La variable que ayudará a entrenar el modelo es:
 | condac 	| Condición de actividad 	|
 
 
-## Recopilación de la fuente de datos
-### Base de datos
-
-```{r}
-library(haven)#para importar bases de datos
-
-#Carga de datos
-load(url("https://github.com/AlvaroLimber/EST-384/blob/master/data/nna16.RData?raw=true"))
-```
-
-## Selección
-
 ## Pre-procesado
 
 ```{r}
@@ -81,19 +74,49 @@ library(dplyr)
 library(tidyr)
 library(Hmisc)
 
-bd <- nna %>% select(condac,depto,area,sexo=ns001a_02,edad=ns001a_03,sabeLeer=ns01a_01,
-maxNivelAprobado=ns01a_02a,maxCursoAprobado=ns01a_02b,inscAlternativa=ns01a_03,inscrito=ns01a_05c,
-asistencia=ns01a_06,tareasDomesticas=ns03a_04,tiempoDescanso=ns04a_02,Tarea1=ns03a_01a,Tarea2=ns03a_01b,
-Tarea3=ns03a_01c,Tarea4=ns03a_01d,Tarea5=ns03a_01e,Tarea6=ns03a_01f,Tarea7=ns03a_01g,
-Tarea8=ns03a_01h,usual=ns03a_03a)
+bd <- nna %>% select(condac,depto,area,ns001a_02,ns001a_03,ns01a_01,ns01a_02a,ns01a_02b,
+                     ns01a_03,ns01a_05c,ns01a_06,ns03a_04,ns04a_02,ns03a_01a,
+                     ns03a_01b,ns03a_01c,ns03a_01d,ns03a_01e,ns03a_01f,
+                     ns03a_01g,ns03a_01h,ns03a_03a)
 ```
-
-
-### Datos pre-procesados
 
 ## Transformación
 ```{r}
 library(tidyverse)
+
+
+
+bd <- bd %>% rename( sexo=ns001a_02,
+                     edad=ns001a_03,
+                     sabeLeer=ns01a_01,
+                     maxNivelAprobado=ns01a_02a,
+                     maxCursoAprobado=ns01a_02b,
+                     inscAlternativa=ns01a_03,
+                     inscrito=ns01a_05c,
+                     asistencia=ns01a_06,
+                     tareasDomesticas=ns03a_04,
+                     tiempoDescanso=ns04a_02,
+                     Tarea1=ns03a_01a,
+                     Tarea2=ns03a_01b,
+                     Tarea3=ns03a_01c,
+                     Tarea4=ns03a_01d,
+                     Tarea5=ns03a_01e,
+                     Tarea6=ns03a_01f,
+                     Tarea7=ns03a_01g,
+                     Tarea8=ns03a_01h,
+                     usual=ns03a_03a) 
+  
+
+
+bd$tareasDomesticas <- factor(bd$tareasDomesticas,c("1.SI","2.NO"),c("SI","NO"))
+
+
+aux<-c("sabeLeer","asistencia","inscAlternativa","tiempoDescanso",
+       "Tarea1","Tarea2","Tarea3","Tarea4","Tarea5","Tarea6","Tarea7","Tarea8")
+
+for(i in aux){
+  bd[[i]]<-factor(bd[[i]],c("1.Si","2.No"),c("SI","NO"))
+}
 
 #Omitir los datos vacíos o nulos.
 bd <- bd %>% na.omit(bd)
@@ -104,11 +127,16 @@ bd <- bd %>% na.omit(bd)
 ```{r}
 ## Elaboración del modelo
 library(rpart)
+names(bd)
 set.seed(123)
 index = sample(1:2, nrow(bd), replace = TRUE, prob=c(0.7, 0.3))
 prop.table(table(index))
+#Dividir la base de datos para el entrenamiento
 trainbd<-bd[index==1,]
+names(trainbd)
+#Dividir la base de datos para la prueba
 testbd<-bd[index==2,]
+names(testbd)
 mod1<-rpart(condac~.,data=trainbd)
 
 #Explorar los nodos creados por rpart
@@ -129,7 +157,7 @@ library(rpart.plot)
 rpart.plot(mod1)
 ```
 
-## Interpretación
+## Análisis e Interpretación
 
 ```{r}
 clase<-predict(mod1,testbd,type = "class")
@@ -139,9 +167,3 @@ table(clase,testbd$condac)
 library(caret)
 confusionMatrix(table(clase,testbd$condac))
 ```
-
-# Resultados y análisis
-
-# Conclusiones y recomendaciones
-
-# Referencias
